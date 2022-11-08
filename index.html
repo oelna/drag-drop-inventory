@@ -3,7 +3,9 @@
 	<head>
 		<meta charset="utf-8" />
 		<title>Inventory</title>
-		
+
+		<meta name="viewport" content="width=device-width" />
+
 		<style>
 			* { box-sizing: border-box; }
 			html {
@@ -12,24 +14,30 @@
 				font-style: normal;
 			}
 
-			body {
+			body,
+			html {
+				position: fixed; /* prevent overscrolling iOS */
 				margin: 0;
 				min-height: 100vh;
+				width: 100%;
 			}
 
 			#inventory {
 				--gap-width: 2px;
 				--cell-size: 2rem;
+				--columns: 6;
+				--rows: 3;
 
 				display: grid;
-				grid-template-columns: repeat(6, var(--cell-size));
-				grid-template-rows: repeat(5, var(--cell-size));
+				grid-template-columns: repeat(var(--columns), var(--cell-size));
+				grid-template-rows: repeat(var(--rows), var(--cell-size));
 
-				width: calc((6 * 2rem) + (7 * var(--gap-width)));
-				height: calc((5 * 2rem) + (6 * var(--gap-width)));
+				width: calc((var(--columns) * var(--cell-size)) + ((var(--columns) + 1) * var(--gap-width)));
+				height: calc((var(--rows) * var(--cell-size)) + ((var(--rows) + 1) * var(--gap-width)));
 				gap: var(--gap-width);
 				background: #000;
 				border: var(--gap-width) solid #000;
+
 				margin: 2rem auto 0.5rem auto;
 			}
 
@@ -37,21 +45,22 @@
 				background: #ffe1c9;
 			}
 
-			#inventory > .over {
+			:is(#inventory, #items) > .over {
 				background: #c74e8e;
 			}
 
 			#items {
 				--gap-width: 2px;
 				--cell-size: 2rem;
+				--columns: 6;
 				--rows: 1;
 
 				display: grid;
-				grid-template-columns: repeat(6, var(--cell-size));
+				grid-template-columns: repeat(var(--columns), var(--cell-size));
 				grid-template-rows: repeat(var(--rows), var(--cell-size));
 
-				width: calc((6 * 2rem) + (7 * var(--gap-width)));
-				height: calc((var(--rows) * 2rem) + ((var(--rows) + 1) * var(--gap-width)));
+				width: calc((var(--columns) * var(--cell-size)) + ((var(--columns) + 1) * var(--gap-width)));
+				height: calc((var(--rows) * var(--cell-size)) + ((var(--rows) + 1) * var(--gap-width)));
 				gap: var(--gap-width);
 				background: #000;
 				border: var(--gap-width) solid #000;
@@ -70,125 +79,136 @@
 				cursor: move;
 			}
 
-			
+			.item.dragging {
+				opacity: 0.4;
+			}
 		</style>
 	</head>
 	<body>
 		<div id="inventory">
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
+			<div class="cell" data-droppable="true"></div>
+			<div class="cell" data-droppable="true"></div>
+			<div class="cell" data-droppable="true"></div>
+			<div class="cell" data-droppable="true"></div>
+			<div class="cell" data-droppable="true"></div>
+			<div class="cell" data-droppable="true"></div>
+			<div class="cell" data-droppable="true"></div>
+			<div class="cell" data-droppable="true"></div>
+			<div class="cell" data-droppable="true"></div>
+			<div class="cell" data-droppable="true"></div>
+			<div class="cell" data-droppable="true"></div>
+			<div class="cell" data-droppable="true"></div>
+			<div class="cell" data-droppable="true"></div>
+			<div class="cell" data-droppable="true"></div>
+			<div class="cell" data-droppable="true"></div>
 		</div>
 
 		<div id="items">
-			<div class="cell"><div draggable="true" class="item" id="i1">A</div></div>
-			<div class="cell"><div draggable="true" class="item" id="i2">B</div></div>
-			<div class="cell"><div draggable="true" class="item" id="i3">C</div></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
-			<div class="cell"></div>
+			<div class="cell" data-droppable="true">
+				<div draggable="true" class="item" id="i1">A</div>
+			</div>
+			<div class="cell" data-droppable="true">
+				<div draggable="true" class="item" id="i2">B</div>
+			</div>
+			<div class="cell" data-droppable="true">
+				<div draggable="true" class="item" id="i3">C</div>
+			</div>
+			<div class="cell" data-droppable="true"></div>
+			<div class="cell" data-droppable="true"></div>
+			<div class="cell" data-droppable="true"></div>
 		</div>
 
 		<script>
 			let sourceCell = null;
 
 			function handleDragStart(e) {
-				this.style.opacity = '0.4';
+				if (event.target.getAttribute('draggable') !== 'true') return false;
 
-				dragSrcEl = this;
+				dragSrcEl = e.target;
+				dragSrcEl.classList.add('dragging');
 
-				if (this.parentNode.classList.contains('cell')) {
-					sourceCell = this.parentNode;
+				if (dragSrcEl.parentNode.getAttribute('data-droppable') === 'true') {
+					sourceCell = dragSrcEl.parentNode;
 				}
 
 				e.dataTransfer.effectAllowed = 'move';
-				e.dataTransfer.setData('text/html', this.outerHTML);
+				e.dataTransfer.setData('text/html', dragSrcEl.outerHTML);
 			}
 
 			function handleDragEnd(e) {
-				this.style.opacity = '1';
+				if (event.target.getAttribute('draggable') !== 'true') return false;
 
-				inventoryCells.forEach(function (cell) {
+				e.target.classList.remove('dragging');
+
+				document.querySelectorAll('[data-droppable="true"]').forEach(function (cell) {
 					cell.classList.remove('over');
 				});
 
 				sourceCell = null;
 			}
 
-			function handleDragOver(e) {
+			function handleDragOver(e) {console.log(e.target);
+				if (getDroppable(e.target) === false) return false;
 				e.preventDefault();
 				return false;
 			}
 
-			function handleDragEnter(e) {
-				this.classList.add('over');
+			function handleDragEnter(e) {console.log(e.target);
+				if (getDroppable(e.target) === false) return false;
+				e.target.classList.add('over');
 			}
 
-			function handleDragLeave(e) {
-				this.classList.remove('over');
+			function handleDragLeave(e) {console.log(e.target);
+				if (getDroppable(e.target) === false) return false;
+				e.target.classList.remove('over');
+			}
+
+			function getDroppable(ele) {
+				if (ele.getAttribute('data-droppable') === 'true') return ele;
+
+				const dropEle = ele.closest('[data-droppable="true"]');
+				if (dropEle) {
+					return dropEle;
+				}
+
+				return false;
 			}
 
 			function handleDrop(e) {
 				e.stopPropagation();
 
-				console.log('drop', this, dragSrcEl);
+				const dropTarget = getDroppable(e.target);
 
 				// handle full cells
-				if (this.querySelector('.item')) {
-					// cell is full
-					console.log('cell is full');
-
+				if (dropTarget.querySelector('[draggable]')) {
+					// cell is full, switch items
 					const sourceItem = dragSrcEl;
-					const targetItem = this.querySelector('.item');
+					const targetItem = dropTarget.querySelector('[draggable]');
 
 					// switch item parents
 					sourceCell.append(targetItem);
-					this.append(sourceItem);
+					dropTarget.append(sourceItem);
 				} else {
-					this.append(dragSrcEl);
+					// cell is free, drop item
+					dropTarget.append(dragSrcEl);
 					dragSrcEl = null;
 				}
 
 				return false;
 			}
 
-			const items = document.querySelectorAll('[draggable="true"]');
-			items.forEach(function (item) {
-				item.addEventListener('dragstart', handleDragStart);
-				item.addEventListener('dragend', handleDragEnd);
-			});
+			/* handle draggable elements */
+			document.addEventListener('dragstart', handleDragStart);
+			document.addEventListener('dragend', handleDragEnd);
 
-			const inventoryCells = document.querySelectorAll('.cell');
-			inventoryCells.forEach(function (cell) {
-				cell.addEventListener('dragover', handleDragOver);
-				cell.addEventListener('dragenter', handleDragEnter);
-				cell.addEventListener('dragleave', handleDragLeave);
-				cell.addEventListener('drop', handleDrop);
-			});
+			/* handle droppable zones */
+			document.addEventListener('dragover', handleDragOver);
+			document.addEventListener('dragenter', handleDragEnter);
+			document.addEventListener('dragleave', handleDragLeave);
+			document.addEventListener('drop', handleDrop);
+
+			/* stop iOS interfering with dragging (maybe dangerous) */
+			document.body.addEventListener('touchmove', preventDefault, { passive: false });
 
 		</script>
 	</body>
